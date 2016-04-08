@@ -29,8 +29,12 @@ class AccountsAPI extends Controller
         $user_mail = $requestUser->request->get('user_email',null);
         $user_pass = $requestUser->request->get('user_pass',null);
         $user_device = $requestUser->request->get('user_device',null);
-        //todo Check null for parameter
 
+        //Check null for parameter
+        if(!$user_mail || !$user_pass || !$user_device ){
+
+            return Utilities::failMessage("Some information is missing");
+        }
 
         $user1 = $this->repos->findOneBy(array('user_email'=>$user_mail));
         if (!$user1) {
@@ -95,12 +99,13 @@ class AccountsAPI extends Controller
         }
 
     }
+
     public function getUserInfo(Request $requestInfo){
         $user_id = $requestInfo->request->get('user_id',null);
 
         if(!$user_id){
 
-            return Utilities::failMessage('Some information is missing');
+            return Utilities::failMessage('User ID is missing');
 
         }
         $user =  $this->repos->findOneBy(array('user_id'=>$user_id));
@@ -122,5 +127,25 @@ class AccountsAPI extends Controller
         }
 
 
+    }
+
+
+
+    public function authorization($user_id,$token){
+        $user =  $this->repos->findOneBy(array('user_id'=>$user_id));
+
+        if(!$user) {
+            return "User not found";
+        }
+        $indens = $user->getIndentities();
+        for($i=0;$i<count($indens);$i++){
+            if($indens[$i]->getToken() == $token){
+                // start create transaction
+                return "success";
+            }
+            if($i == (count($indens) - 1) ){
+                return 'Request Fail,logout or sign in again';
+            }
+        }
     }
 }

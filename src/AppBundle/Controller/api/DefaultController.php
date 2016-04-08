@@ -35,6 +35,8 @@ class DefaultController extends Controller
                 $response->setContent( $accounts ->  getUserInfo($request));
                 break;
             case 'createTransaction':
+                $transactionAPI = new TransactionAPI($this->getDoctrine()->getManager());
+                $response->setContent($transactionAPI->createTransactionsForRequest($request));
                 break;
             case 'getAllTransaction':
                 $transactionAPI = new TransactionAPI($this->getDoctrine()->getManager());
@@ -45,6 +47,5 @@ class DefaultController extends Controller
         }
 
         return $response;
-//        return new Response($method);
     }
 }
