@@ -19,4 +19,5 @@ class Utilities
         $result = array('success' => 0, 'message' => $message);
         return json_encode($result);
     }
+
 }

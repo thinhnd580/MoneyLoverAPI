@@ -29,48 +29,55 @@ class TransactionAPI extends Controller
     public function getTransactionsForUser(Request $requestUser)
     {
         $user_id = $requestUser->request->get('user_id', null);
+        $token = $requestUser->request->get('token', null);
         //todo Check token recive
-        if (!$user_id) {
+        if ($user_id == "" ) {
             return Utilities::failMessage('User ID is missing');
+        }
+        if ($token == "" ) {
+            return Utilities::failMessage('Token is missing');
         }
         $user = $this->repos->findOneBy(array('user_id' => $user_id));
         if (!$user) {
-
             return Utilities::failMessage('User not found');
-
         }
         else {
-            $trans = $user->getTransactions();
-            $count = count($trans);
-            $data = array();
+            $accoutAPI = new AccountsAPI($this->em);
+            $authoResult = $accoutAPI->authorization($user_id,$token);
+            if($authoResult =='success'){
+                // Autho success
+                $trans = $user->getTransactions();
+                $count = count($trans);
+                $data = array();
 
-            for ($i = 0; $i < $count; $i++) {
-                $date = $trans[$i]->getCreatedDate()->format('Y-m-d H:i:s');;
-                $tran = array(
-                    'tran_id' => $trans[$i]->getId(),
-                    'cost' => $trans[$i]->getCost(),
-                    'note' => $trans[$i]->getNote(),
-                    'create_date' => $date,
-                    'category_id' => $trans[$i]->getCategory()->getCategoryId(),
-                    'category_name' => $trans[$i]->getCategory()->getCategoryName()
+                for ($i = 0; $i < $count; $i++) {
+                    $date = $trans[$i]->getCreatedDate()->format('Y-m-d H:i:s');;
+                    $tran = array(
+                        'tran_id' => $trans[$i]->getId(),
+                        'cost' => $trans[$i]->getCost(),
+                        'note' => $trans[$i]->getNote(),
+                        'create_date' => $date,
+                        'category_id' => $trans[$i]->getCategory()->getCategoryId(),
+                        'category_name' => $trans[$i]->getCategory()->getCategoryName()
+                    );
 
+                    $data[] = $tran;
+                }
+
+                $result = array(
+                    'success' => 1,
+                    'message' => "",
+                    'transactions' => $count,
+                    'data' => $data
                 );
-
-                $data[] = $tran;
+                return json_encode($result);
             }
-
-            $result = array(
-                'success' => 1,
-                'message' => "",
-                'transactions' => $count,
-                'data' => $data
-            );
-            return json_encode($result);
-
+            else{
+                //return if autho fail
+                return Utilities::failMessage($authoResult);
+            }
         }
     }
-
-
 
     public function createTransactionsForRequest(Request $request){
         $user_id = $request->request->get('user_id',null);
@@ -78,31 +85,35 @@ class TransactionAPI extends Controller
         $category_id = $request->request->get('category_id',null);
         $cost = $request->request->get('cost',null);
         $note = $request->request->get('note',null);
-
         // Check info recive
-
-        if(!$user_id || !$token || !$category_id || !$cost || !$note ){
-
+        if($user_id == ""  || $token == ""  || $category_id == ""  || $cost == "" ){
             return Utilities::failMessage("Some information is missing");
         }
-
+        if(!is_numeric($cost)){
+            return Utilities::failMessage("Invaild cost input");
+        }
+        if(!is_numeric($user_id)){
+            return Utilities::failMessage("Invaild User Id input");
+        }
+        if(!is_numeric($category_id)){
+            return Utilities::failMessage("Invaild Category Id input");
+        }
         /* Autorization */
-
         $accoutAPI = new AccountsAPI($this->em);
         $authoResult = $accoutAPI->authorization($user_id,$token);
-
-
-        if($authoResult == 'success'){ //If autho success
+        if($authoResult == 'success'){
+            //If autho success
             $user =  $this->repos->findOneBy(array('user_id'=>$user_id));
             $category = $this->em->getRepository('AppBundle:Category')->findOneBy(array('category_id'=>$category_id));
+            if(!$category){
+                return Utilities::failMessage("Category not found");
+            }
             return $this->processCreateTransaction($user,$category,$cost,$note);
-//            return 'sssssw';
         }
         else{
             //return if autho fail
             return Utilities::failMessage($authoResult);
         }
-
     }
 
     public function processCreateTransaction($user,$category,$cost,$note){
@@ -114,7 +125,7 @@ class TransactionAPI extends Controller
         $tran->setCreatedDate(new DateTime());
         $this->em->persist($tran);
         $this->em->flush();
-        $result = array('success'=>1);
+        $result = array("success"=>1,"message"=>"");
         return  json_encode($result);
     }
 

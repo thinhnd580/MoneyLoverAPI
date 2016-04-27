@@ -42,7 +42,8 @@ class DefaultController extends Controller
                 $transactionAPI = new TransactionAPI($this->getDoctrine()->getManager());
                 $response->setContent($transactionAPI->getTransactionsForUser($request));
                 break;
-            default
+            default :
+                $response->setStatusCode(404);
             ;
         }
 

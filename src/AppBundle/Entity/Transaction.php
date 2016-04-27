@@ -34,7 +34,7 @@ class Transaction
      */
     private $cost;
 
-    /** @ORM\Column(length=225)
+    /** @ORM\Column(length=225,nullable=true)
      */
     private $note;
 
