@@ -104,7 +104,6 @@ class AccountsAPI extends Controller
             $result = array('success'=>1,'message'=>'');
             return json_encode($result);
         }
-
     }
 
     public function getUserInfo(Request $requestInfo){
